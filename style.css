@@ -1,0 +1,356 @@
+/* ============================================
+   Design Tokens
+   ============================================ */
+:root {
+  --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Dark palette */
+  --bg-body: #0a0a0f;
+  --bg-calc: rgba(20, 20, 35, 0.75);
+  --bg-display: rgba(10, 10, 20, 0.6);
+  --bg-number: rgba(255, 255, 255, 0.06);
+  --bg-number-hover: rgba(255, 255, 255, 0.12);
+  --bg-utility: rgba(160, 170, 200, 0.12);
+  --bg-utility-hover: rgba(160, 170, 200, 0.22);
+  --bg-operator: #6c5ce7;
+  --bg-operator-hover: #7f6ff0;
+  --bg-equals: #00cec9;
+  --bg-equals-hover: #2de5e0;
+
+  --text-primary: #f0f0f5;
+  --text-secondary: rgba(240, 240, 245, 0.55);
+  --text-utility: #a0aac8;
+  --text-operator: #ffffff;
+
+  --border-glass: rgba(255, 255, 255, 0.08);
+  --shadow-calc: 0 25px 60px rgba(0, 0, 0, 0.5), 0 0 120px rgba(108, 92, 231, 0.08);
+  --shadow-btn: 0 2px 8px rgba(0, 0, 0, 0.2);
+
+  --radius-calc: 28px;
+  --radius-btn: 16px;
+  --radius-display: 18px;
+
+  --transition-fast: 0.15s ease;
+  --transition-normal: 0.3s ease;
+}
+
+/* ============================================
+   Reset & Base
+   ============================================ */
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-primary);
+  background: var(--bg-body);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ============================================
+   Animated Background Orbs
+   ============================================ */
+.bg-orbs {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(100px);
+  opacity: 0.35;
+  animation: float 18s ease-in-out infinite;
+}
+
+.orb-1 {
+  width: 420px;
+  height: 420px;
+  background: radial-gradient(circle, #6c5ce7, transparent 70%);
+  top: -10%;
+  left: -5%;
+  animation-delay: 0s;
+}
+
+.orb-2 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, #00cec9, transparent 70%);
+  bottom: -8%;
+  right: -3%;
+  animation-delay: -6s;
+}
+
+.orb-3 {
+  width: 280px;
+  height: 280px;
+  background: radial-gradient(circle, #fd79a8, transparent 70%);
+  top: 50%;
+  left: 60%;
+  animation-delay: -12s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(40px, -30px) scale(1.05); }
+  50% { transform: translate(-20px, 50px) scale(0.95); }
+  75% { transform: translate(30px, 20px) scale(1.02); }
+}
+
+/* ============================================
+   Container & Calculator Shell
+   ============================================ */
+.container {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 380px;
+  padding: 20px;
+}
+
+.calculator {
+  background: var(--bg-calc);
+  backdrop-filter: blur(40px) saturate(1.4);
+  -webkit-backdrop-filter: blur(40px) saturate(1.4);
+  border: 1px solid var(--border-glass);
+  border-radius: var(--radius-calc);
+  box-shadow: var(--shadow-calc);
+  overflow: hidden;
+  padding: 20px;
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* ============================================
+   Display
+   ============================================ */
+.display {
+  background: var(--bg-display);
+  border-radius: var(--radius-display);
+  border: 1px solid var(--border-glass);
+  padding: 24px 22px 20px;
+  margin-bottom: 18px;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  overflow: hidden;
+}
+
+.display-expression {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: var(--text-secondary);
+  min-height: 1.3em;
+  word-break: break-all;
+  text-align: right;
+  width: 100%;
+  transition: color var(--transition-fast);
+}
+
+.display-value {
+  font-size: 2.8rem;
+  font-weight: 300;
+  letter-spacing: -1px;
+  line-height: 1.15;
+  word-break: break-all;
+  text-align: right;
+  width: 100%;
+  transition: font-size var(--transition-normal);
+}
+
+.display-value.shrink {
+  font-size: 1.8rem;
+}
+
+/* ============================================
+   Button Grid
+   ============================================ */
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+/* ============================================
+   Buttons – Shared
+   ============================================ */
+.btn {
+  appearance: none;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  font-family: var(--font-primary);
+  font-size: 1.25rem;
+  font-weight: 500;
+  border-radius: var(--radius-btn);
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background var(--transition-fast),
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.25), transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.btn:active::after {
+  opacity: 1;
+}
+
+.btn:active {
+  transform: scale(0.93);
+}
+
+/* Number buttons */
+.btn-number {
+  background: var(--bg-number);
+  color: var(--text-primary);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.btn-number:hover {
+  background: var(--bg-number-hover);
+}
+
+/* Wide zero button */
+.btn-wide {
+  grid-column: span 2;
+}
+
+/* Utility buttons (AC, +/−, %) */
+.btn-utility {
+  background: var(--bg-utility);
+  color: var(--text-utility);
+  border: 1px solid rgba(160, 170, 200, 0.06);
+}
+
+.btn-utility:hover {
+  background: var(--bg-utility-hover);
+}
+
+/* Operator buttons */
+.btn-operator {
+  background: var(--bg-operator);
+  color: var(--text-operator);
+  box-shadow: 0 4px 15px rgba(108, 92, 231, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.btn-operator:hover {
+  background: var(--bg-operator-hover);
+  box-shadow: 0 4px 20px rgba(108, 92, 231, 0.5);
+}
+
+.btn-operator.active {
+  background: #fff;
+  color: var(--bg-operator);
+  box-shadow: 0 0 20px rgba(108, 92, 231, 0.6);
+}
+
+/* Equals button */
+.btn-equals {
+  background: var(--bg-equals);
+  color: #0a0a0f;
+  font-weight: 600;
+  box-shadow: 0 4px 15px rgba(0, 206, 201, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.btn-equals:hover {
+  background: var(--bg-equals-hover);
+  box-shadow: 0 4px 20px rgba(0, 206, 201, 0.5);
+}
+
+/* ============================================
+   Ripple Animation
+   ============================================ */
+@keyframes ripple {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(0);
+  animation: ripple 0.5s ease-out;
+  pointer-events: none;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+@media (max-width: 420px) {
+  .container {
+    padding: 12px;
+  }
+
+  .calculator {
+    padding: 14px;
+    border-radius: 22px;
+  }
+
+  .btn {
+    height: 56px;
+    font-size: 1.1rem;
+    border-radius: 14px;
+  }
+
+  .buttons {
+    gap: 9px;
+  }
+
+  .display-value {
+    font-size: 2.4rem;
+  }
+}
