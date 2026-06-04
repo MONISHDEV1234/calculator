@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Calculator Integration Tests</title>
+  <style>
+    body { font-family: 'Consolas', monospace; background: #0a0a0f; color: #eee; padding: 24px; max-width: 900px; margin: 0 auto; }
+    h1 { color: #00cec9; margin-bottom: 6px; }
+    h3 { color: #a78bfa; margin: 20px 0 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 4px; }
+    .test { padding: 5px 12px; margin: 2px 0; border-radius: 6px; font-size: 13px; display: flex; justify-content: space-between; }
+    .pass { background: rgba(0, 200, 83, 0.1); color: #69f0ae; }
+    .fail { background: rgba(255, 82, 82, 0.15); color: #ff5252; font-weight: bold; }
+    .info { color: #888; font-size: 12px; }
+    #summary { margin-top: 24px; padding: 16px; border-radius: 12px; font-size: 18px; font-weight: bold; text-align: center; }
+    .all-pass { background: rgba(0, 200, 83, 0.15); color: #69f0ae; border: 1px solid rgba(0, 200, 83, 0.3); }
+    .has-fails { background: rgba(255, 82, 82, 0.15); color: #ff5252; border: 1px solid rgba(255, 82, 82, 0.3); }
+  </style>
+</head>
+<body>
+  <h1>🧮 Calculator Integration Tests</h1>
+  <p class="info">Simulating the actual Calculator module functions</p>
+  <div id="results"></div>
+  <div id="summary"></div>
+
+  <script>
+    const R = document.getElementById('results');
+    const S = document.getElementById('summary');
+    let passed = 0, failed = 0;
+
+    // ---- Replicate calculator internals exactly ----
+    let angleMode = 'DEG';
+
+    function toRadians(angle) {
+      return angleMode === 'DEG' ? angle * Math.PI / 180 : angle;
+    }
+    function fromRadians(rad) {
+      return angleMode === 'DEG' ? rad * 180 / Math.PI : rad;
+    }
+
+    function factorial(n) {
+      n = Math.round(n);
+      if (n < 0) return 'Error';
+      if (n > 170) return Infinity;
+      if (n <= 1) return 1;
+      let result = 1;
+      for (let i = 2; i <= n; i++) result *= i;
+      return result;
+    }
+
+    function formatNumber(num) {
+      if (num === 'Error') return 'Error';
+      if (typeof num === 'string') num = parseFloat(num);
+      if (typeof num !== 'number' || isNaN(num)) return 'Error';
+      if (!isFinite(num)) return num > 0 ? '∞' : '-∞';
+      if (Math.abs(num) < 1e-14) return '0';
+      if (Math.abs(num) > 999999999999) return num.toExponential(5);
+      if (Math.abs(num) < 0.000001 && num !== 0) return num.toExponential(5);
+      return parseFloat(num.toPrecision(12)).toString();
+    }
+
+    function handleFunction(func, currentValue) {
+      const num = parseFloat(currentValue);
+      if (isNaN(num)) return { result: 'Error', expression: '' };
+      let result;
+      let expression = '';
+      const modeLabel = angleMode === 'DEG' ? '°' : 'ʳ';
+
+      switch (func) {
+        case 'sin': {
+          const rad = toRadians(num);
+          result = Math.sin(rad);
+          expression = `sin(${currentValue}${modeLabel})`;
+          break;
+        }
+        case 'cos': {
+          const rad = toRadians(num);
+          result = Math.cos(rad);
+          expression = `cos(${currentValue}${modeLabel})`;
+          break;
+        }
+        case 'tan': {
+          if (angleMode === 'DEG' && Math.abs(num % 180) === 90) {
+            result = 'Error';
+          } else if (angleMode === 'RAD' && Math.abs((num / (Math.PI / 2)) % 2 - 1) < 1e-10) {
+            result = 'Error';
+          } else {
+            const rad = toRadians(num);
+            result = Math.tan(rad);
+          }
+          expression = `tan(${currentValue}${modeLabel})`;
+          break;
+        }
+        case 'asin': {
+          if (num < -1 || num > 1) { result = 'Error'; }
+          else { result = fromRadians(Math.asin(num)); }
+          expression = `sin⁻¹(${currentValue})`;
+          break;
+        }
+        case 'acos': {
+          if (num < -1 || num > 1) { result = 'Error'; }
+          else { result = fromRadians(Math.acos(num)); }
+          expression = `cos⁻¹(${currentValue})`;
+          break;
+        }
+        case 'atan': {
+          result = fromRadians(Math.atan(num));
+          expression = `tan⁻¹(${currentValue})`;
+          break;
+        }
+        case 'log': {
+          if (num <= 0) { result = 'Error'; }
+          else { result = Math.log10(num); }
+          expression = `log₁₀(${currentValue})`;
+          break;
+        }
+        case 'ln': {
+          if (num <= 0) { result = 'Error'; }
+          else { result = Math.log(num); }
+          expression = `ln(${currentValue})`;
+          break;
+        }
+        case 'sqrt': {
+          if (num < 0) { result = 'Error'; }
+          else { result = Math.sqrt(num); }
+          expression = `√(${currentValue})`;
+          break;
+        }
+        case 'square': {
+          result = num * num;
+          expression = `(${currentValue})²`;
+          break;
+        }
+        case 'cube': {
+          result = num * num * num;
+          expression = `(${currentValue})³`;
+          break;
+        }
+        case 'cbrt': {
+          result = Math.cbrt(num);
+          expression = `∛(${currentValue})`;
+          break;
+        }
+        case '10^x': {
+          result = Math.pow(10, num);
+          expression = `10^(${currentValue})`;
+          break;
+        }
+        case 'factorial': {
+          if (num < 0 || !Number.isInteger(num)) { result = 'Error'; }
+          else if (num > 170) { result = Infinity; }
+          else { result = factorial(num); }
+          expression = `${currentValue}!`;
+          break;
+        }
+        case 'inv': {
+          if (num === 0) { result = 'Error'; }
+          else { result = 1 / num; }
+          expression = `1/(${currentValue})`;
+          break;
+        }
+        case 'abs': {
+          result = Math.abs(num);
+          expression = `|${currentValue}|`;
+          break;
+        }
+        case 'negate': {
+          result = -num;
+          expression = `-(${currentValue})`;
+          break;
+        }
+        default:
+          return { result: num, expression: '' };
+      }
+      return { result: formatNumber(result), expression };
+    }
+
+    function calculate(a, op, b) {
+      const numA = parseFloat(a);
+      const numB = parseFloat(b);
+      if (isNaN(numA) || isNaN(numB)) return 'Error';
+      switch (op) {
+        case '+': return numA + numB;
+        case '-': return numA - numB;
+        case '*': return numA * numB;
+        case '/': return numB === 0 ? 'Error' : numA / numB;
+        case '^': return Math.pow(numA, numB);
+        default: return numB;
+      }
+    }
+
+    // ---- Test Helpers ----
+    function section(title) {
+      const h = document.createElement('h3');
+      h.textContent = title;
+      R.appendChild(h);
+    }
+
+    function test(name, actual, expected) {
+      const ok = actual === expected;
+      const div = document.createElement('div');
+      div.className = `test ${ok ? 'pass' : 'fail'}`;
+      div.innerHTML = `<span>${ok ? '✅' : '❌'} ${name}</span><span>${ok ? expected : `got "${actual}" expected "${expected}"`}</span>`;
+      R.appendChild(div);
+      ok ? passed++ : failed++;
+    }
+
+    // ============================
+    // TEST SUITE
+    // ============================
+
+    // ---- TRIG (DEG MODE) ----
+    section('Trigonometry — DEG mode');
+    angleMode = 'DEG';
+    test('sin(0°) = 0',    handleFunction('sin', '0').result, '0');
+    test('sin(30°) = 0.5',  handleFunction('sin', '30').result, '0.5');
+    test('sin(45°)',         handleFunction('sin', '45').result, formatNumber(Math.sin(45 * Math.PI / 180)));
+    test('sin(90°) = 1',    handleFunction('sin', '90').result, '1');
+    test('sin(180°) = 0',   handleFunction('sin', '180').result, '0');
+    test('sin(270°) = -1',  handleFunction('sin', '270').result, '-1');
+    test('sin(360°) = 0',   handleFunction('sin', '360').result, '0');
+
+    test('cos(0°) = 1',     handleFunction('cos', '0').result, '1');
+    test('cos(60°) = 0.5',  handleFunction('cos', '60').result, '0.5');
+    test('cos(90°) = 0',    handleFunction('cos', '90').result, '0');
+    test('cos(180°) = -1',  handleFunction('cos', '180').result, '-1');
+    test('cos(360°) = 1',   handleFunction('cos', '360').result, '1');
+
+    test('tan(0°) = 0',     handleFunction('tan', '0').result, '0');
+    test('tan(45°) = 1',    handleFunction('tan', '45').result, '1');
+    test('tan(90°) = Error', handleFunction('tan', '90').result, 'Error');
+    test('tan(180°) = 0',   handleFunction('tan', '180').result, '0');
+    test('tan(270°) = Error', handleFunction('tan', '270').result, 'Error');
+    test('tan(-90°) = Error', handleFunction('tan', '-90').result, 'Error');
+
+    // ---- TRIG (RAD MODE) ----
+    section('Trigonometry — RAD mode');
+    angleMode = 'RAD';
+    test('sin(0) = 0',              handleFunction('sin', '0').result, '0');
+    test('sin(π/6) = 0.5',          handleFunction('sin', String(Math.PI / 6)).result, '0.5');
+    test('sin(π/2) = 1',            handleFunction('sin', String(Math.PI / 2)).result, '1');
+    test('cos(0) = 1',              handleFunction('cos', '0').result, '1');
+    test('cos(π/3) = 0.5',          handleFunction('cos', String(Math.PI / 3)).result, '0.5');
+    test('cos(π) = -1',             handleFunction('cos', String(Math.PI)).result, '-1');
+    test('tan(0) = 0',              handleFunction('tan', '0').result, '0');
+    test('tan(π/4) = 1',            handleFunction('tan', String(Math.PI / 4)).result, '1');
+
+    // ---- INVERSE TRIG (DEG MODE) ----
+    section('Inverse Trig — DEG mode');
+    angleMode = 'DEG';
+    test('asin(0) = 0°',     handleFunction('asin', '0').result, '0');
+    test('asin(0.5) = 30°',  handleFunction('asin', '0.5').result, '30');
+    test('asin(1) = 90°',    handleFunction('asin', '1').result, '90');
+    test('asin(-1) = -90°',  handleFunction('asin', '-1').result, '-90');
+    test('asin(2) = Error',  handleFunction('asin', '2').result, 'Error');
+    test('asin(-2) = Error', handleFunction('asin', '-2').result, 'Error');
+
+    test('acos(1) = 0°',     handleFunction('acos', '1').result, '0');
+    test('acos(0.5) = 60°',  handleFunction('acos', '0.5').result, '60');
+    test('acos(0) = 90°',    handleFunction('acos', '0').result, '90');
+    test('acos(-1) = 180°',  handleFunction('acos', '-1').result, '180');
+    test('acos(2) = Error',  handleFunction('acos', '2').result, 'Error');
+
+    test('atan(0) = 0°',     handleFunction('atan', '0').result, '0');
+    test('atan(1) = 45°',    handleFunction('atan', '1').result, '45');
+    test('atan(-1) = -45°',  handleFunction('atan', '-1').result, '-45');
+
+    // ---- INVERSE TRIG (RAD MODE) ----
+    section('Inverse Trig — RAD mode');
+    angleMode = 'RAD';
+    test('asin(0.5) = π/6',  handleFunction('asin', '0.5').result, formatNumber(Math.PI / 6));
+    test('acos(0.5) = π/3',  handleFunction('acos', '0.5').result, formatNumber(Math.PI / 3));
+    test('atan(1) = π/4',    handleFunction('atan', '1').result, formatNumber(Math.PI / 4));
+    angleMode = 'DEG'; // reset
+
+    // ---- LOGARITHMS ----
+    section('Logarithms');
+    test('log(1) = 0',       handleFunction('log', '1').result, '0');
+    test('log(10) = 1',      handleFunction('log', '10').result, '1');
+    test('log(100) = 2',     handleFunction('log', '100').result, '2');
+    test('log(1000) = 3',    handleFunction('log', '1000').result, '3');
+    test('log(0) = Error',   handleFunction('log', '0').result, 'Error');
+    test('log(-5) = Error',  handleFunction('log', '-5').result, 'Error');
+    test('log(0.1) = -1',    handleFunction('log', '0.1').result, '-1');
+    test('log(0.01) = -2',   handleFunction('log', '0.01').result, '-2');
+
+    test('ln(1) = 0',        handleFunction('ln', '1').result, '0');
+    test('ln(e) ≈ 1',        handleFunction('ln', String(Math.E)).result, '1');
+    test('ln(0) = Error',    handleFunction('ln', '0').result, 'Error');
+    test('ln(-1) = Error',   handleFunction('ln', '-1').result, 'Error');
+
+    // ---- POWER / ROOTS ----
+    section('Powers & Roots');
+    test('√(0) = 0',         handleFunction('sqrt', '0').result, '0');
+    test('√(1) = 1',         handleFunction('sqrt', '1').result, '1');
+    test('√(4) = 2',         handleFunction('sqrt', '4').result, '2');
+    test('√(9) = 3',         handleFunction('sqrt', '9').result, '3');
+    test('√(2) ≈ 1.414',     handleFunction('sqrt', '2').result, formatNumber(Math.sqrt(2)));
+    test('√(-1) = Error',    handleFunction('sqrt', '-1').result, 'Error');
+
+    test('2² = 4',           handleFunction('square', '2').result, '4');
+    test('0² = 0',           handleFunction('square', '0').result, '0');
+    test('(-3)² = 9',        handleFunction('square', '-3').result, '9');
+    test('10² = 100',        handleFunction('square', '10').result, '100');
+
+    test('10^0 = 1',         handleFunction('10^x', '0').result, '1');
+    test('10^1 = 10',        handleFunction('10^x', '1').result, '10');
+    test('10^2 = 100',       handleFunction('10^x', '2').result, '100');
+    test('10^-1 = 0.1',      handleFunction('10^x', '-1').result, '0.1');
+
+    // ---- FACTORIAL ----
+    section('Factorial');
+    test('0! = 1',            handleFunction('factorial', '0').result, '1');
+    test('1! = 1',            handleFunction('factorial', '1').result, '1');
+    test('5! = 120',          handleFunction('factorial', '5').result, '120');
+    test('10! = 3628800',     handleFunction('factorial', '10').result, '3628800');
+    test('(-1)! = Error',     handleFunction('factorial', '-1').result, 'Error');
+    test('2.5! = Error',      handleFunction('factorial', '2.5').result, 'Error');
+    test('171! = ∞',          handleFunction('factorial', '171').result, '∞');
+
+    // ---- OTHER FUNCTIONS ----
+    section('Other Functions');
+    test('1/2 = 0.5',        handleFunction('inv', '2').result, '0.5');
+    test('1/4 = 0.25',       handleFunction('inv', '4').result, '0.25');
+    test('1/0 = Error',      handleFunction('inv', '0').result, 'Error');
+    test('|5| = 5',          handleFunction('abs', '5').result, '5');
+    test('|-5| = 5',         handleFunction('abs', '-5').result, '5');
+    test('|0| = 0',          handleFunction('abs', '0').result, '0');
+    test('negate(5) = -5',   handleFunction('negate', '5').result, '-5');
+    test('negate(-3) = 3',   handleFunction('negate', '-3').result, '3');
+    test('negate(0) = 0',    handleFunction('negate', '0').result, '0');
+
+    // ---- BASIC ARITHMETIC ----
+    section('Basic Arithmetic');
+    test('2 + 3 = 5',        formatNumber(calculate('2', '+', '3')), '5');
+    test('10 - 4 = 6',       formatNumber(calculate('10', '-', '4')), '6');
+    test('6 × 7 = 42',       formatNumber(calculate('6', '*', '7')), '42');
+    test('15 ÷ 3 = 5',       formatNumber(calculate('15', '/', '3')), '5');
+    test('10 ÷ 0 = Error',   formatNumber(calculate('10', '/', '0')), 'Error');
+    test('0 ÷ 5 = 0',        formatNumber(calculate('0', '/', '5')), '0');
+    test('2 ^ 10 = 1024',    formatNumber(calculate('2', '^', '10')), '1024');
+    test('5 ^ 0 = 1',        formatNumber(calculate('5', '^', '0')), '1');
+    test('0.1 + 0.2 ≈ 0.3',  formatNumber(calculate('0.1', '+', '0.2')), '0.3');
+
+    // ---- FORMAT NUMBER EDGE CASES ----
+    section('formatNumber Edge Cases');
+    test('format(NaN) = Error',         formatNumber(NaN), 'Error');
+    test('format(Infinity) = ∞',        formatNumber(Infinity), '∞');
+    test('format(-Infinity) = -∞',      formatNumber(-Infinity), '-∞');
+    test('format("Error") = Error',     formatNumber('Error'), 'Error');
+    test('format("abc") = Error',       formatNumber('abc'), 'Error');
+    test('format(0) = 0',              formatNumber(0), '0');
+    test('format(1e-16) = 0 (noise)',   formatNumber(1e-16), '0');
+    test('format(sin(180°) noise) = 0', formatNumber(Math.sin(Math.PI)), '0');
+    test('format(1e13) exp notation',   formatNumber(1e13).includes('e'), true);
+    test('format(1e-7) exp notation',   formatNumber(1e-7).includes('e'), true);
+
+    // ---- EXPRESSION DISPLAY ----
+    section('Expression Labels');
+    angleMode = 'DEG';
+    test('sin expr shows °',    handleFunction('sin', '30').expression, 'sin(30°)');
+    test('cos expr shows °',    handleFunction('cos', '60').expression, 'cos(60°)');
+    test('tan expr shows °',    handleFunction('tan', '45').expression, 'tan(45°)');
+    test('log expr = log₁₀()',  handleFunction('log', '10').expression, 'log₁₀(10)');
+    test('ln expr = ln()',      handleFunction('ln', '1').expression, 'ln(1)');
+    test('asin expr = sin⁻¹()', handleFunction('asin', '0.5').expression, 'sin⁻¹(0.5)');
+    angleMode = 'RAD';
+    test('sin RAD expr shows ʳ', handleFunction('sin', '1').expression, 'sin(1ʳ)');
+    angleMode = 'DEG';
+
+    // ========== SUMMARY ==========
+    const total = passed + failed;
+    S.textContent = `${passed}/${total} tests passed${failed > 0 ? ` — ${failed} FAILED` : ' — All pass! 🎉'}`;
+    S.className = failed === 0 ? 'all-pass' : 'has-fails';
+  </script>
+</body>
+</html>

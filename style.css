@@ -348,9 +348,40 @@ body {
 }
 
 .scientific-buttons.visible {
-  max-height: 200px;
+  max-height: 320px;
   opacity: 1;
   margin-bottom: 10px;
+}
+
+/* Angle Mode Toggle Row */
+.angle-mode-row {
+  display: flex;
+  margin-bottom: 10px;
+}
+
+.btn-angle-mode {
+  background: linear-gradient(135deg, rgba(253, 121, 168, 0.15), rgba(108, 92, 231, 0.15));
+  color: #fd79a8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  height: 32px;
+  padding: 0 18px;
+  border: 1px solid rgba(253, 121, 168, 0.2);
+  border-radius: 8px;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-family: var(--font-mono);
+}
+
+.btn-angle-mode:hover {
+  background: linear-gradient(135deg, rgba(253, 121, 168, 0.25), rgba(108, 92, 231, 0.25));
+  color: #fab1d0;
+  box-shadow: 0 0 15px rgba(253, 121, 168, 0.2);
+}
+
+.btn-angle-mode:active {
+  transform: scale(0.95);
 }
 
 .sci-row {

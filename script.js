@@ -11,6 +11,7 @@ const Calculator = (() => {
   let memory = 0;
   let history = [];
   let isScientificMode = false;
+  let angleMode = 'DEG'; // 'DEG' or 'RAD'
 
   // ---- DOM ----
   const displayValue = document.getElementById('display-value');
@@ -22,9 +23,27 @@ const Calculator = (() => {
   const historyEmpty = document.getElementById('history-empty');
   const modeIndicator = document.getElementById('mode-indicator');
   const toast = document.getElementById('toast');
+  const angleModeBtn = document.getElementById('btn-angle-mode');
   const calcEl = document.getElementById('calculator');
 
   const operatorSymbols = { '+': '+', '-': '−', '*': '×', '/': '÷', '^': '^' };
+
+  // ============================================
+  // Angle Mode Helpers
+  // ============================================
+  function toRadians(angle) {
+    return angleMode === 'DEG' ? angle * Math.PI / 180 : angle;
+  }
+
+  function fromRadians(rad) {
+    return angleMode === 'DEG' ? rad * 180 / Math.PI : rad;
+  }
+
+  function toggleAngleMode() {
+    angleMode = angleMode === 'DEG' ? 'RAD' : 'DEG';
+    if (angleModeBtn) angleModeBtn.textContent = angleMode;
+    showToast(`Angle mode: ${angleMode === 'DEG' ? 'Degrees' : 'Radians'}`);
+  }
 
   // ============================================
   // Core Math
@@ -44,8 +63,7 @@ const Calculator = (() => {
   }
 
   function factorial(n) {
-    n = Math.round(n);
-    if (n < 0) return 'Error';
+    if (!Number.isInteger(n) || n < 0) return 'Error';
     if (n > 170) return Infinity;
     if (n <= 1) return 1;
     let result = 1;
@@ -55,12 +73,14 @@ const Calculator = (() => {
 
   function formatNumber(num) {
     if (num === 'Error') return 'Error';
-    const parsed = parseFloat(num);
-    if (isNaN(parsed)) return 'Error';
-    if (!isFinite(parsed)) return parsed > 0 ? '∞' : '-∞';
-    if (Math.abs(parsed) > 999999999999) return parsed.toExponential(5);
-    if (Math.abs(parsed) < 0.000001 && parsed !== 0) return parsed.toExponential(5);
-    return parseFloat(parsed.toPrecision(12)).toString();
+    if (typeof num === 'string') num = parseFloat(num);
+    if (typeof num !== 'number' || isNaN(num)) return 'Error';
+    if (!isFinite(num)) return num > 0 ? '∞' : '-∞';
+    // Clean up floating-point noise (e.g., sin(180°) ≈ 1.22e-16 → 0)
+    if (Math.abs(num) < 1e-14) return '0';
+    if (Math.abs(num) > 999999999999) return num.toExponential(5);
+    if (Math.abs(num) < 0.000001 && num !== 0) return num.toExponential(5);
+    return parseFloat(num.toPrecision(12)).toString();
   }
 
   // ============================================
@@ -195,50 +215,123 @@ const Calculator = (() => {
   function handleFunction(func) {
     if (currentValue === 'Error') return;
     const num = parseFloat(currentValue);
+    if (isNaN(num)) { currentValue = 'Error'; updateDisplay(); return; }
     let result;
+    const modeLabel = angleMode === 'DEG' ? '°' : 'ʳ';
 
     switch (func) {
-      case 'sin':
-        result = Math.sin(num * Math.PI / 180); // degrees
-        expression = `sin(${currentValue})`;
+      // --- Trig (input is an angle in current mode) ---
+      case 'sin': {
+        const rad = toRadians(num);
+        result = Math.sin(rad);
+        expression = `sin(${currentValue}${modeLabel})`;
         break;
-      case 'cos':
-        result = Math.cos(num * Math.PI / 180);
-        expression = `cos(${currentValue})`;
+      }
+      case 'cos': {
+        const rad = toRadians(num);
+        result = Math.cos(rad);
+        expression = `cos(${currentValue}${modeLabel})`;
         break;
-      case 'tan':
-        if (Math.abs(num % 180) === 90) { result = 'Error'; }
-        else { result = Math.tan(num * Math.PI / 180); }
-        expression = `tan(${currentValue})`;
+      }
+      case 'tan': {
+        // Check for undefined values (90°, 270°, etc. in DEG mode)
+        if (angleMode === 'DEG' && Math.abs(num % 180) === 90) {
+          result = 'Error';
+        } else if (angleMode === 'RAD' && Math.abs((num / (Math.PI / 2)) % 2 - 1) < 1e-10) {
+          result = 'Error';
+        } else {
+          const rad = toRadians(num);
+          result = Math.tan(rad);
+        }
+        expression = `tan(${currentValue}${modeLabel})`;
         break;
-      case 'log':
-        result = num <= 0 ? 'Error' : Math.log10(num);
-        expression = `log(${currentValue})`;
+      }
+
+      // --- Inverse Trig (output is an angle in current mode) ---
+      case 'asin': {
+        if (num < -1 || num > 1) { result = 'Error'; }
+        else { result = fromRadians(Math.asin(num)); }
+        expression = `sin⁻¹(${currentValue})`;
         break;
-      case 'ln':
-        result = num <= 0 ? 'Error' : Math.log(num);
+      }
+      case 'acos': {
+        if (num < -1 || num > 1) { result = 'Error'; }
+        else { result = fromRadians(Math.acos(num)); }
+        expression = `cos⁻¹(${currentValue})`;
+        break;
+      }
+      case 'atan': {
+        result = fromRadians(Math.atan(num));
+        expression = `tan⁻¹(${currentValue})`;
+        break;
+      }
+
+      // --- Logarithms ---
+      case 'log': {
+        if (num <= 0) { result = 'Error'; }
+        else { result = Math.log10(num); }
+        expression = `log₁₀(${currentValue})`;
+        break;
+      }
+      case 'ln': {
+        if (num <= 0) { result = 'Error'; }
+        else { result = Math.log(num); }
         expression = `ln(${currentValue})`;
         break;
-      case 'sqrt':
-        result = num < 0 ? 'Error' : Math.sqrt(num);
+      }
+
+      // --- Power / Roots ---
+      case 'sqrt': {
+        if (num < 0) { result = 'Error'; }
+        else { result = Math.sqrt(num); }
         expression = `√(${currentValue})`;
         break;
-      case 'square':
+      }
+      case 'square': {
         result = num * num;
         expression = `(${currentValue})²`;
         break;
-      case 'factorial':
-        result = num < 0 || num > 170 ? 'Error' : factorial(num);
+      }
+      case 'cube': {
+        result = num * num * num;
+        expression = `(${currentValue})³`;
+        break;
+      }
+      case 'cbrt': {
+        result = Math.cbrt(num);
+        expression = `∛(${currentValue})`;
+        break;
+      }
+      case '10^x': {
+        result = Math.pow(10, num);
+        expression = `10^(${currentValue})`;
+        break;
+      }
+
+      // --- Other ---
+      case 'factorial': {
+        if (num < 0 || !Number.isInteger(num)) { result = 'Error'; }
+        else if (num > 170) { result = Infinity; }
+        else { result = factorial(num); }
         expression = `${currentValue}!`;
         break;
-      case 'inv':
-        result = num === 0 ? 'Error' : 1 / num;
+      }
+      case 'inv': {
+        if (num === 0) { result = 'Error'; }
+        else { result = 1 / num; }
         expression = `1/(${currentValue})`;
         break;
-      case 'abs':
+      }
+      case 'abs': {
         result = Math.abs(num);
         expression = `|${currentValue}|`;
         break;
+      }
+      case 'negate': {
+        result = -num;
+        expression = `-(${currentValue})`;
+        break;
+      }
       default:
         return;
     }
@@ -438,6 +531,11 @@ const Calculator = (() => {
   function init() {
     // Button clicks (delegation)
     document.querySelector('.calculator').addEventListener('click', handleButtonClick);
+
+    // Angle mode toggle
+    if (angleModeBtn) {
+      angleModeBtn.addEventListener('click', toggleAngleMode);
+    }
 
     // Keyboard
     document.addEventListener('keydown', handleKeyboard);

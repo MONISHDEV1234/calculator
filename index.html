@@ -68,6 +68,11 @@
 
         <!-- Scientific Buttons (hidden by default) -->
         <div class="scientific-buttons" id="scientific-buttons">
+          <!-- Angle Mode Toggle -->
+          <div class="angle-mode-row">
+            <button class="btn btn-angle-mode" id="btn-angle-mode" title="Toggle Degrees / Radians">DEG</button>
+          </div>
+          <!-- Trig -->
           <div class="sci-row">
             <button class="btn btn-sci" id="btn-sin" data-action="func" data-value="sin">sin</button>
             <button class="btn btn-sci" id="btn-cos" data-action="func" data-value="cos">cos</button>
@@ -75,6 +80,15 @@
             <button class="btn btn-sci" id="btn-log" data-action="func" data-value="log">log</button>
             <button class="btn btn-sci" id="btn-ln" data-action="func" data-value="ln">ln</button>
           </div>
+          <!-- Inverse Trig -->
+          <div class="sci-row">
+            <button class="btn btn-sci" id="btn-asin" data-action="func" data-value="asin">sin⁻¹</button>
+            <button class="btn btn-sci" id="btn-acos" data-action="func" data-value="acos">cos⁻¹</button>
+            <button class="btn btn-sci" id="btn-atan" data-action="func" data-value="atan">tan⁻¹</button>
+            <button class="btn btn-sci" id="btn-10x" data-action="func" data-value="10^x">10ˣ</button>
+            <button class="btn btn-sci" id="btn-negate" data-action="func" data-value="negate">±</button>
+          </div>
+          <!-- Powers & Roots -->
           <div class="sci-row">
             <button class="btn btn-sci" id="btn-sqrt" data-action="func" data-value="sqrt">√x</button>
             <button class="btn btn-sci" id="btn-square" data-action="func" data-value="square">x²</button>
@@ -82,6 +96,7 @@
             <button class="btn btn-sci" id="btn-factorial" data-action="func" data-value="factorial">x!</button>
             <button class="btn btn-sci" id="btn-inv" data-action="func" data-value="inv">1/x</button>
           </div>
+          <!-- Constants & Misc -->
           <div class="sci-row">
             <button class="btn btn-sci" id="btn-pi" data-action="constant" data-value="pi">π</button>
             <button class="btn btn-sci" id="btn-e" data-action="constant" data-value="e">e</button>
