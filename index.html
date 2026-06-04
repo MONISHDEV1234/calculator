@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="A sleek, modern web calculator with glassmorphism design and smooth animations.">
-  <title>Calculator | Neo</title>
+  <meta name="description" content="An advanced scientific calculator with history, memory, and a stunning glassmorphism UI.">
+  <title>Calculator Pro | Neo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,41 +15,127 @@
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
+    <div class="orb orb-4"></div>
   </div>
 
-  <main class="container">
-    <div class="calculator" id="calculator">
-      <div class="display" id="display">
-        <div class="display-expression" id="display-expression"></div>
-        <div class="display-value" id="display-value">0</div>
+  <main class="app-wrapper">
+    <!-- History Panel -->
+    <aside class="history-panel" id="history-panel">
+      <div class="history-header">
+        <h2>History</h2>
+        <button class="icon-btn" id="btn-clear-history" title="Clear History">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+          </svg>
+        </button>
       </div>
-      <div class="buttons">
-        <button class="btn btn-utility" id="btn-clear" data-action="clear">AC</button>
-        <button class="btn btn-utility" id="btn-sign" data-action="sign">+/−</button>
-        <button class="btn btn-utility" id="btn-percent" data-action="percent">%</button>
-        <button class="btn btn-operator" id="btn-divide" data-action="operator" data-value="/">÷</button>
+      <div class="history-list" id="history-list">
+        <p class="history-empty" id="history-empty">No calculations yet</p>
+      </div>
+    </aside>
 
-        <button class="btn btn-number" id="btn-7" data-action="number" data-value="7">7</button>
-        <button class="btn btn-number" id="btn-8" data-action="number" data-value="8">8</button>
-        <button class="btn btn-number" id="btn-9" data-action="number" data-value="9">9</button>
-        <button class="btn btn-operator" id="btn-multiply" data-action="operator" data-value="*">×</button>
+    <!-- Calculator -->
+    <div class="calculator-wrapper">
+      <div class="calculator" id="calculator">
+        <!-- Top Bar -->
+        <div class="top-bar">
+          <button class="icon-btn" id="btn-toggle-history" title="History">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </button>
+          <div class="mode-toggle" id="mode-toggle">
+            <button class="mode-btn active" data-mode="basic" id="btn-mode-basic">Basic</button>
+            <button class="mode-btn" data-mode="scientific" id="btn-mode-sci">Scientific</button>
+            <div class="mode-indicator" id="mode-indicator"></div>
+          </div>
+          <button class="icon-btn" id="btn-copy" title="Copy Result">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+            </svg>
+          </button>
+        </div>
 
-        <button class="btn btn-number" id="btn-4" data-action="number" data-value="4">4</button>
-        <button class="btn btn-number" id="btn-5" data-action="number" data-value="5">5</button>
-        <button class="btn btn-number" id="btn-6" data-action="number" data-value="6">6</button>
-        <button class="btn btn-operator" id="btn-subtract" data-action="operator" data-value="-">−</button>
+        <!-- Display -->
+        <div class="display" id="display">
+          <div class="memory-indicator" id="memory-indicator">M</div>
+          <div class="display-expression" id="display-expression"></div>
+          <div class="display-value" id="display-value">0</div>
+        </div>
 
-        <button class="btn btn-number" id="btn-1" data-action="number" data-value="1">1</button>
-        <button class="btn btn-number" id="btn-2" data-action="number" data-value="2">2</button>
-        <button class="btn btn-number" id="btn-3" data-action="number" data-value="3">3</button>
-        <button class="btn btn-operator" id="btn-add" data-action="operator" data-value="+">+</button>
+        <!-- Scientific Buttons (hidden by default) -->
+        <div class="scientific-buttons" id="scientific-buttons">
+          <div class="sci-row">
+            <button class="btn btn-sci" id="btn-sin" data-action="func" data-value="sin">sin</button>
+            <button class="btn btn-sci" id="btn-cos" data-action="func" data-value="cos">cos</button>
+            <button class="btn btn-sci" id="btn-tan" data-action="func" data-value="tan">tan</button>
+            <button class="btn btn-sci" id="btn-log" data-action="func" data-value="log">log</button>
+            <button class="btn btn-sci" id="btn-ln" data-action="func" data-value="ln">ln</button>
+          </div>
+          <div class="sci-row">
+            <button class="btn btn-sci" id="btn-sqrt" data-action="func" data-value="sqrt">√x</button>
+            <button class="btn btn-sci" id="btn-square" data-action="func" data-value="square">x²</button>
+            <button class="btn btn-sci" id="btn-power" data-action="operator" data-value="^">xʸ</button>
+            <button class="btn btn-sci" id="btn-factorial" data-action="func" data-value="factorial">x!</button>
+            <button class="btn btn-sci" id="btn-inv" data-action="func" data-value="inv">1/x</button>
+          </div>
+          <div class="sci-row">
+            <button class="btn btn-sci" id="btn-pi" data-action="constant" data-value="pi">π</button>
+            <button class="btn btn-sci" id="btn-e" data-action="constant" data-value="e">e</button>
+            <button class="btn btn-sci" id="btn-paren-open" data-action="paren" data-value="(">(</button>
+            <button class="btn btn-sci" id="btn-paren-close" data-action="paren" data-value=")">)</button>
+            <button class="btn btn-sci" id="btn-abs" data-action="func" data-value="abs">|x|</button>
+          </div>
+        </div>
 
-        <button class="btn btn-number btn-wide" id="btn-0" data-action="number" data-value="0">0</button>
-        <button class="btn btn-number" id="btn-decimal" data-action="decimal" data-value=".">.</button>
-        <button class="btn btn-equals" id="btn-equals" data-action="equals">=</button>
+        <!-- Memory Row -->
+        <div class="memory-buttons">
+          <button class="btn btn-memory" id="btn-mc" data-action="mc">MC</button>
+          <button class="btn btn-memory" id="btn-mr" data-action="mr">MR</button>
+          <button class="btn btn-memory" id="btn-mplus" data-action="m+">M+</button>
+          <button class="btn btn-memory" id="btn-mminus" data-action="m-">M−</button>
+        </div>
+
+        <!-- Main Buttons -->
+        <div class="buttons">
+          <button class="btn btn-utility" id="btn-clear" data-action="clear">AC</button>
+          <button class="btn btn-utility" id="btn-backspace" data-action="backspace">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2z"></path>
+              <line x1="18" y1="9" x2="12" y2="15"></line>
+              <line x1="12" y1="9" x2="18" y2="15"></line>
+            </svg>
+          </button>
+          <button class="btn btn-utility" id="btn-percent" data-action="percent">%</button>
+          <button class="btn btn-operator" id="btn-divide" data-action="operator" data-value="/">÷</button>
+
+          <button class="btn btn-number" id="btn-7" data-action="number" data-value="7">7</button>
+          <button class="btn btn-number" id="btn-8" data-action="number" data-value="8">8</button>
+          <button class="btn btn-number" id="btn-9" data-action="number" data-value="9">9</button>
+          <button class="btn btn-operator" id="btn-multiply" data-action="operator" data-value="*">×</button>
+
+          <button class="btn btn-number" id="btn-4" data-action="number" data-value="4">4</button>
+          <button class="btn btn-number" id="btn-5" data-action="number" data-value="5">5</button>
+          <button class="btn btn-number" id="btn-6" data-action="number" data-value="6">6</button>
+          <button class="btn btn-operator" id="btn-subtract" data-action="operator" data-value="-">−</button>
+
+          <button class="btn btn-number" id="btn-1" data-action="number" data-value="1">1</button>
+          <button class="btn btn-number" id="btn-2" data-action="number" data-value="2">2</button>
+          <button class="btn btn-number" id="btn-3" data-action="number" data-value="3">3</button>
+          <button class="btn btn-operator" id="btn-add" data-action="operator" data-value="+">+</button>
+
+          <button class="btn btn-number btn-wide" id="btn-0" data-action="number" data-value="0">0</button>
+          <button class="btn btn-number" id="btn-decimal" data-action="decimal" data-value=".">.</button>
+          <button class="btn btn-equals" id="btn-equals" data-action="equals">=</button>
+        </div>
       </div>
     </div>
   </main>
+
+  <div class="toast" id="toast">Copied!</div>
 
   <script src="script.js"></script>
 </body>
